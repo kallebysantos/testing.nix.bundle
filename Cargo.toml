@@ -4,3 +4,15 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+blas-src = { version = "0.8", features = ['openblas'] }
+ndarray = { version = "0.16", features = ['blas'] }
+openblas-src = { version = "0.10", features = ['cblas', 'system'] }
+
+
+ort = { version = "=2.0.0-rc.9", default-features = false, features = [
+  "ndarray",
+  "half",
+  "load-dynamic",
+  "cuda",
+] }
+ort-sys = "=2.0.0-rc.9"
