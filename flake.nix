@@ -9,7 +9,7 @@
       let
         pkgs = import nixpkgs { inherit system; };
       in {
-        packages.nix-app = pkgs.callPackage ./package.nix { };
+        packages.nix-app = pkgs.callPackage ./nix/package.nix { };
         defaultPackage = self.packages.${system}.nix-app;
       });
 }

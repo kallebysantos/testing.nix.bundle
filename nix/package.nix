@@ -11,9 +11,9 @@ let
   build_step = rustPlatform.buildRustPackage (finalAttrs: {
     pname = "nix-app_build";
     version = "0.1.0";
-    src = ./.;
+    src = ../.;
     cargoLock = {
-      lockFile = ./Cargo.lock;
+      lockFile = ../Cargo.lock;
     };
     nativeBuildInputs = [ pkg-config ];
     buildInputs = [ openblas onnxruntime ];
