@@ -28,54 +28,58 @@ stdenv.mkDerivation {
   dontPatchShebangs = true;
   nativeBuildInputs = lib.optionals stdenv.isLinux [ patchelf ];
 
-  buildPhase = ''
-    mkdir -p $out/bin $out/lib
+buildPhase = ''
+  mkdir -p $out/bin $out/lib
 
-    cp ${nix-app-unwrapped}/bin/nix-app $out/bin/.nix-app-wrapped
+  cp ${nix-app-unwrapped}/bin/nix-app $out/bin/.nix-app-wrapped
 
-    get_deps() {
-      if [ "$(uname)" = "Darwin" ]; then
-        otool -L "$1" 2>/dev/null | grep /nix/store | awk '{print $1}'
-      else
-        ldd "$1" 2>/dev/null | grep /nix/store | awk '{print $3}'
-      fi
-    }
+  get_deps() {
+    if [ "$(uname)" = "Darwin" ]; then
+      otool -L "$1" 2>/dev/null | grep /nix/store | awk '{print $1}'
+    else
+      ldd "$1" 2>/dev/null | grep /nix/store | awk '{print $3}'
+    fi
+  }
 
-    should_exclude() {
-      case "$1" in
-        libc.so*|libc-*.so*|ld-linux*.so*|libdl.so*|libpthread.so*|libm.so*|libresolv.so*|librt.so*)
-          return 0 ;;
-        *) return 1 ;;
-      esac
-    }
+  should_exclude() {
+    case "$1" in
+      libc.so*|libc-*.so*|ld-linux*.so*|libdl.so*|libpthread.so*|libm.so*|libresolv.so*|librt.so*)
+        return 0 ;;
+      *) return 1 ;;
+    esac
+  }
 
-    # Copy direct deps
-    for dep in $(get_deps $out/bin/.nix-app-wrapped); do
-      libname=$(basename "$dep")
-      should_exclude "$libname" && continue
-      [ -f "$dep" ] && cp "$dep" $out/lib/ 2>/dev/null || true
-    done
+  copy_dep() {
+    local dep="$1"
+    local libname=$(basename "$dep")
+    [ -f "$out/lib/$libname" ] && return  # already copied
+    should_exclude "$libname" && return
+    [ -f "$dep" ] && cp "$dep" $out/lib/ 2>/dev/null || true
+  }
 
-    # Iteratively copy transitive deps
-    for iteration in 1 2 3 4 5; do
-      before=$(ls $out/lib/ | wc -l)
-      for lib in $out/lib/*; do
-        [ -f "$lib" ] || continue
-        for dep in $(get_deps "$lib"); do
-          libname=$(basename "$dep")
-          [ -f "$out/lib/$libname" ] && continue
-          should_exclude "$libname" && continue
-          [ -f "$dep" ] && cp "$dep" $out/lib/ 2>/dev/null || true
-        done
+  # Seed: direct deps of binary + onnxruntime and all its siblings
+  for dep in $(get_deps $out/bin/.nix-app-wrapped); do
+    copy_dep "$dep"
+  done
+  cp ${onnxruntime}/lib/libonnxruntime*.dylib $out/lib/ 2>/dev/null || \
+  cp ${onnxruntime}/lib/libonnxruntime*.so*   $out/lib/ 2>/dev/null || true
+
+  # Iterative crawl until no new deps appear
+  for iteration in 1 2 3 4 5; do
+    before=$(ls $out/lib/ | wc -l)
+
+    for lib in $out/lib/*; do
+      [ -f "$lib" ] || continue
+      for dep in $(get_deps "$lib"); do
+        copy_dep "$dep"
       done
-      after=$(ls $out/lib/ | wc -l)
-      [ "$before" -eq "$after" ] && break
     done
 
-    # Explicitly bundle onnxruntime for ORT_DYLIB_PATH / load-dynamic
-    cp ${onnxruntime}/lib/libonnxruntime*.dylib $out/lib/ 2>/dev/null || \
-    cp ${onnxruntime}/lib/libonnxruntime*.so*   $out/lib/ 2>/dev/null || true
-  '';
+    after=$(ls $out/lib/ | wc -l)
+    echo "Iteration $iteration: $before -> $after libs"
+    [ "$before" -eq "$after" ] && break
+  done
+'';
 
 installPhase = ''
   cat > $out/bin/nix-app << 'EOF'
