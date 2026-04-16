@@ -38,19 +38,45 @@
         "aarch64-darwin"
       ];
 
-      imports = [
-        ./nix/rust-overlay/flake-module.nix
-        ./nix/devshell/flake-module.nix
-      ];
+      # imports = [
+      #   ./nix/rust-overlay/flake-module.nix
+      #   ./nix/devshell/flake-module.nix
+      # ];
 
-      perSystem = { system, pkgs, lib, inputs', ... }:
+      perSystem = { system, lib, inputs', ... }:
         let
-          # If you dislike IFD, you can also generate it with `crate2nix generate` 
-          # on each dependency change and import it here with `import ./Cargo.nix`.
-          cargoNix = inputs.crate2nix.tools.${system}.appliedCargoNix {
+          pkgs = import nixpkgs {
+            inherit system;
+            overlays = [ rust-overlay.overlays.default ];
+          };
+
+          buildRustCrateForPkgs =
+            crate:
+            pkgs.buildRustCrate.override {
+              rustc = pkgs.rust-bin.stable.latest.default;
+              cargo = pkgs.rust-bin.stable.latest.default;
+            };
+
+          generatedCargoNix = inputs.crate2nix.tools.${system}.generatedCargoNix {
             name = "nix-app";
             src = ./.;
           };
+
+          # openblas = pkgs.openblas.stable.latest.default;
+          cargoNix = import generatedCargoNix {
+            inherit pkgs buildRustCrateForPkgs;
+          };
+
+          # rootCrate = cargoNix.rootCrate.build.override {
+          #   crateOverrides = pkgs: pkgs.buildRustCrate.override {
+          #     # defaultCrateOverrides = {
+          #     #   openblas-src  = attrs: {
+          #     #     features = ["static"];
+          #     #     # buildInputs = [ openblas brew ];
+          #     #   };
+          #     # };
+          #   };
+          # };
         in
         rec {
           checks = {
@@ -60,7 +86,20 @@
           };
 
           packages = {
-            rustnix = cargoNix.rootCrate.build;
+            rustnix = cargoNix.rootCrate.build.override {
+              crateOverrides = pkgs: pkgs.buildRustCrate.override {
+                defaultCrateOverrides = pkgs.defaultCrateOverrides //{
+                  # git2 = attrs: {
+                  #   buildInputs = [ pkgs.openssl ];
+                  # };
+                  blas-src = attrs: {
+                    #features = ["static"];
+                    buildInputs = [ pkgs.openblas ];
+                  };
+                };
+              };
+            };
+
             default = packages.rustnix;
 
             inherit (pkgs) rust-toolchain;

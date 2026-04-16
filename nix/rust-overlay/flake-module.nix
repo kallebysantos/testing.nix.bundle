@@ -1,4 +1,8 @@
-{ inputs, ... }:
+{ 
+  inputs, 
+  openblas,
+  ... 
+}:
 let
   overlays = [
     (import inputs.rust-overlay)
@@ -6,8 +10,11 @@ let
       rust-toolchain = super.rust-bin.fromRustupToolchainFile ../../rust-toolchain.toml;
 
       # buildRustCrate/crate2nix depend on this.
-      rustc = rust-toolchain;
-      cargo = rust-toolchain;
+      # rustc = rust-toolchain;
+      # cargo = rust-toolchain;
+
+      # app dependencies
+      openblas = openblas;
     })
   ];
 in
