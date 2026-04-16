@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+deno_core = "0.324.0"
+# eszip = "=0.80.0"
+
 blas-src = { version = "0.8", features = ['openblas'] }
 ndarray = { version = "0.16", features = ['blas'] }
 openblas-src = { version = "0.10", features = ['cblas', 'system'] }
@@ -16,3 +19,9 @@ ort = { version = "=2.0.0-rc.9", default-features = false, features = [
   "cuda",
 ] }
 ort-sys = "=2.0.0-rc.9"
+
+
+[patch.crates-io]
+deno_core = { git = "https://github.com/supabase/deno_core", branch = "324-supabase" }
+# eszip = { git = "https://github.com/supabase/eszip", branch = "fix-pub-vis-0-80-1" }
+v8 = { git = "https://github.com/supabase/rusty_v8", tag = "v130.0.7" }

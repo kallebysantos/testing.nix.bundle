@@ -1,0 +1,6 @@
+{
+  "git+https://github.com/supabase/deno_core?branch=324-supabase#0.324.0": "0xvig4r9zjh16b9rmxkb17blngcz81c7zv423kahs3d780m188aq",
+  "git+https://github.com/supabase/deno_core?branch=324-supabase#deno_ops@0.200.0": "0xvig4r9zjh16b9rmxkb17blngcz81c7zv423kahs3d780m188aq",
+  "git+https://github.com/supabase/deno_core?branch=324-supabase#serde_v8@0.233.0": "0xvig4r9zjh16b9rmxkb17blngcz81c7zv423kahs3d780m188aq",
+  "git+https://github.com/supabase/rusty_v8?tag=v130.0.7#v8@130.0.7": "0l2f0vpvir2l9d5vxi1h55f8q84ghi68gkilr7xma204c8m0fryj"
+}

@@ -6,6 +6,8 @@
   onnxruntime,
   pkg-config,
   patchelf,
+  curl,
+  fetchurl,
 }:
 let
   build_step = rustPlatform.buildRustPackage (finalAttrs: {
@@ -14,9 +16,23 @@ let
     src = ../.;
     cargoLock = {
       lockFile = ../Cargo.lock;
+      # allowBuiltinFetchGit = true;
+      outputHashes = {
+        # deno_core, deno_ops, serde_v8 all come from the same repo/rev
+        "deno_core-0.324.0" = "sha256-WCEUKkCnDQ3VHILsf1hAnz1L1wlr9prTMgHKnzJ5cXc=";
+        # v8 comes from rusty_v8
+        "v8-130.0.7" = "sha256-0mcHKmIECFX7yTTOh0yEjyCMXCkwxL5LS1TkuO8GTlA=";
+        #"eszip-0.80.0" = lib.fakeHash;
+      };
     };
-    nativeBuildInputs = [ pkg-config ];
-    buildInputs = [ openblas onnxruntime ];
+
+    RUSTY_V8_ARCHIVE= fetchurl {
+      url = "https://github.com/supabase/rusty_v8/releases/download/v130.0.7-patch.1/librusty_v8_release_aarch64-apple-darwin.a.gz";
+      sha256 = "sha256-VYWg+9WekcHBJWEq49eAAVpc6g/PPaoZDm/j2DKNQLY=";
+    };
+
+    nativeBuildInputs = [ pkg-config curl ];
+    buildInputs = [ openblas onnxruntime curl ];
     doCheck = false;
   });
 in
