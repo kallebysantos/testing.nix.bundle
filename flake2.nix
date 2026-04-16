@@ -89,9 +89,9 @@
             buildInputs = [ pkgs.openblas ];
             doCheck = false;
             release = true;
-
-            buildNoDefaultFeatures = true;
-            CARGO_PKG_README = "./readme.md";
+            RUSTFLAGS = "--cap-lints allow";
+            extraRustcOpts = [ "--edition=2018" "-A" "rustdoc::all" "--cfg" "doc" ];
+            cargoBuildFlags = [ "--lib" ];
           });
 
         generatedCargoNix = inputs.crate2nix.tools.${system}.generatedCargoNix {
