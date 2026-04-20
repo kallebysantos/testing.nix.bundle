@@ -5,6 +5,9 @@ on:
     branches:
       - main
       - develop
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 permissions:
