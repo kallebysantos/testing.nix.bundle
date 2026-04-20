@@ -60,9 +60,6 @@ jobs:
       - run: rustup show
       - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
 
-      - name: Install ONNX Runtime Library
-        run: ./scripts/install_onnx.sh "${{ env.ONNXRUNTIME_VERSION }}" linux x64 /tmp/onnxruntime
-
       - name: Run tests
         id: tests
         run: |
