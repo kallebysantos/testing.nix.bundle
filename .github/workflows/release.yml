@@ -15,16 +15,16 @@ jobs:
     name: Build (${{ matrix.target }})
     strategy:
       matrix:
-        include:
-          - system: aarch64-darwin
-            runner: macos-14
-            arch: darwin-arm64
-          - system: x86_64-linux
-            runner: ubuntu-latest
-            arch: linux-x64
-          - system: aarch64-linux
-            runner: ubuntu-24.04-arm
-            arch: linux-arm64
+        # include:
+        #   - system: aarch64-darwin
+        #     runner: macos-14
+        #     arch: darwin-arm64
+        #   - system: x86_64-linux
+        #     runner: ubuntu-latest
+        #     arch: linux-x64
+        #   - system: aarch64-linux
+        #     runner: ubuntu-24.04-arm
+        #     arch: linux-arm64
         include:
           - os: ubuntu-latest
             system: x86_64-linux
