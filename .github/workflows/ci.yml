@@ -15,7 +15,7 @@ on:
       - 'Cargo.toml'
   push:
     branches:
-      - main
+      - master
       - develop
     paths: *watch
   workflow_dispatch:
