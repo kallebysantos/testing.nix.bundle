@@ -1,0 +1,89 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    strategy:
+      matrix:
+        include:
+          - system: aarch64-darwin
+            runner: macos-14
+            arch: darwin-arm64
+          - system: x86_64-linux
+            runner: ubuntu-latest
+            arch: linux-x64
+          - system: aarch64-linux
+            runner: ubuntu-24.04-arm
+            arch: linux-arm64
+        include:
+          - os: ubuntu-latest
+            system: x86_64-linux
+            target: x86_64-linux
+          - os: macos-latest
+            system: aarch64-darwin
+            target: aarch64-darwin
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: DeterminateSystems/nix-installer-action@v13
+
+      - name: Restore Nix store cache
+        uses: actions/cache@v4
+        with:
+          path: /nix/store
+          key: nix-store-${{ matrix.target }}-${{ hashFiles('flake.lock') }}
+          restore-keys: nix-store-${{ matrix.target }}-
+
+      - name: Build
+        run: |
+          nix build --extra-experimental-features "nix-command flakes" \
+            --system ${{ matrix.system }}
+
+      - name: Copy binary out of store
+        run: |
+          cp -L $(nix path-info \
+            --extra-experimental-features "nix-command flakes") \
+            ./nix-app-${{ github.ref_name }}-${{ matrix.target }}
+          chmod +x ./nix-app-${{ github.ref_name }}-${{ matrix.target }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nix-app-${{ matrix.target }}
+          path: nix-app-${{ github.ref_name }}-${{ matrix.target }}
+          retention-days: 1
+
+  release:
+    name: Publish release
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: dist/
+          merge-multiple: true
+
+      - name: Create tarballs and checksums
+        run: |
+          cd dist
+          for BIN in nix-app-*; do
+            TAR="${BIN}.tar.gz"
+            tar czf "$TA
