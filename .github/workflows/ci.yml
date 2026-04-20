@@ -1,0 +1,69 @@
+
+name: CI
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - ready_for_review
+    paths: &watch
+      - '.cargo/**'
+      - 'cli/**'
+      - 'Cargo.lock'
+      - 'Cargo.toml'
+  push:
+    branches:
+      - main
+      - develop
+    paths: *watch
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  CARGO_TERM_COLOR: always
+  RUSTUP_MAX_RETRIES: 10
+  ORT_DYLIB_PATH: /tmp/onnxruntime/lib/libonnxruntime.so
+  RUST_LOG: ext_event_worker=trace
+
+jobs:
+  cargo-clippy:
+    if: github.event.pull_request.draft == false
+    name: 'cargo clippy'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libblas-dev liblapack-dev libopenblas-dev
+      - run: rustup show
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+      - run: cargo clippy
+
+  cargo-test:
+    if: github.event.pull_request.draft == false
+    name: 'cargo test'
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - name: Install deps
+        run: |
+          sudo apt-get update
+          sudo apt-get -y install libblas-dev liblapack-dev libopenblas-dev
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - run: rustup show
+      - uses: Swatinem/rust-cache@e18b497796c12c097a38f9edb9d0641fb99eee32 # v2
+
+      - name: Install ONNX Runtime Library
+        run: ./scripts/install_onnx.sh "${{ env.ONNXRUNTIME_VERSION }}" linux x64 /tmp/onnxruntime
+
+      - name: Run tests
+        id: tests
+        run: |
+          cargo test
